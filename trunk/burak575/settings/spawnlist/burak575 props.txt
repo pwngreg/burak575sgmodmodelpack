@@ -1,0 +1,27 @@
+"SpawnMenu"
+{
+	"Information"
+	{
+		"version"		"3"
+		"name"		"Burak575 Props"
+	}
+	"Entries"
+	{
+		"1"		"models/burak575/gasmask.mdl"
+		"2"		"models/burak575/hellfire.mdl"
+		"3"		"models/burak575/rocketlauncher.mdl"
+		"4"		"models/burak575/bombcluster.mdl"
+		"5"		"models/burak575/clusterrocket.mdl"
+		"6"		"models/burak575/spacerocket.mdl"
+		"7"		"models/burak575/mrocketbase.mdl"
+		"8"		"models/burak575/mrockettop.mdl"
+		"9"		"models/burak575/nuclear.mdl"
+		"10"		"models/burak575/axle.mdl"
+		"11"		"models/burak575/crank_shaft.mdl"
+		"12"		"models/burak575/fuel_injection.mdl"
+		"13"		"models/burak575/motor_block.mdl"
+		"14"		"models/burak575/oil_pot.mdl"
+		"15"		"models/burak575/piston_header.mdl"
+		"16"		"models/burak575/piston_zero.mdl"
+	}
+}

@@ -1,0 +1,9 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "Models/burak575/gasmask_glass"
+	"$envmapmask" "Models/burak575/gasmask_m"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[.3 .3 .4]"
+	"$translucent" 1
+	"$nocull" 1
+}
