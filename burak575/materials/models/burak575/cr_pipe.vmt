@@ -1,0 +1,6 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "Models/burak575/cr_pipe"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[.05 .05 .05]"
+}
