@@ -2,7 +2,7 @@
 {
 	"Information"
 	{
-		"version"		"4"
+		"version"		"0"
 		"name"		"Burak575 Props"
 	}
 	"Entries"
@@ -24,5 +24,9 @@
 		"15"		"models/burak575/piston_header.mdl"
 		"16"		"models/burak575/piston_zero.mdl"
 		"17"		"models/burak575/full_axle.mdl"
+		"18"		"models/burak575/car_bonnet.mdl"
+		"19"		"models/burak575/car_door.mdl"
+		"20"		"models/burak575/car_skeleton.mdl"
+		"21"		"models/burak575/car_steer.mdl"
 	}
 }
