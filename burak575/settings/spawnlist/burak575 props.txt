@@ -2,7 +2,7 @@
 {
 	"Information"
 	{
-		"version"		"3"
+		"version"		"4"
 		"name"		"Burak575 Props"
 	}
 	"Entries"
@@ -23,5 +23,6 @@
 		"14"		"models/burak575/oil_pot.mdl"
 		"15"		"models/burak575/piston_header.mdl"
 		"16"		"models/burak575/piston_zero.mdl"
+		"17"		"models/burak575/full_axle.mdl"
 	}
 }
