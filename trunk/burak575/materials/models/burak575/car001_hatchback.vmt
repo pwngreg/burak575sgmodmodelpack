@@ -1,0 +1,10 @@
+
+"VertexLitGeneric"
+{
+	// Original shader: VertexLitTexture
+	"$basetexture" "Models/props_vehicles/car001_hatchback"
+	"$surfaceprop" "solidmetal"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[ .02 .02 .02]"
+	"$nocull" 1
+}
