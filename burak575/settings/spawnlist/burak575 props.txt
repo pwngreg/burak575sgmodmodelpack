@@ -28,5 +28,7 @@
 		"19"	"models/burak575/car_door.mdl"
 		"20"	"models/burak575/car_skeleton.mdl"
 		"21"	"models/burak575/car_steer.mdl"
+		"22"	"models/burak575/mrocketbase2x.mdl"
+		"23"	"models/burak575/mrockettop2x.mdl"
 	}
 }
