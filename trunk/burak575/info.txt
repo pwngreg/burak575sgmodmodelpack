@@ -1,8 +1,8 @@
 "AddonInfo"
 {
 	"name"		"Burak575"
-	"version"		"3"
-	"up_date"	"7th May 2008"
+	"version"		"4"
+	"up_date"	"18th Oct 2009"
 	"author_name"	"burak575"
 	"author_email"	"burak575@gmail.com"
 	"info"		"burak575 Model Pack"
