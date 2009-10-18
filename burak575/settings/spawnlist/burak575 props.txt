@@ -25,5 +25,6 @@
 		"16"	"models/burak575/radial_axle.mdl"
 		"17"	"models/burak575/radial_motorblock.mdl"
 		"18"	"models/burak575/radial_motorcap.mdl"
+		"19"	"models/burak575/radial_motorblock_mixed.mdl"
 	}
 }
