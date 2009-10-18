@@ -22,5 +22,8 @@
 		"13"	"models/burak575/axle20.mdl"
 		"14"	"models/burak575/oilpot20.mdl"
 		"15"	"models/burak575/piston20.mdl"
+		"16"	"models/burak575/radial_axle.mdl"
+		"17"	"models/burak575/radial_motorblock.mdl"
+		"18"	"models/burak575/radial_motorcap.mdl"
 	}
 }
