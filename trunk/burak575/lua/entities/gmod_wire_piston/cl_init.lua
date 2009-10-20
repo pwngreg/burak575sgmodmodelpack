@@ -52,6 +52,10 @@ end
 function ENT:Think()
 	self.BaseClass.Think(self)
 	
+	self.ShouldDraw = GetConVarNumber( "cl_drawthrusterseffects" )
+	
+	if !self.ShouldDraw then return end
+	
 	--[[local tr = {}
 	tr.start = self:GetPos()
 	tr.endpos = tr.start + (self:GetUp() * 10)
@@ -66,16 +70,16 @@ function ENT:Think()
 		self.vLength = 5
 	end --]]
 	
-	if self.MotorBlock == nil then
+	--if self.MotorBlock == nil then
 		self.MotorBlock = self:GetMotorBlock()
 		self.CylHead = self:GetCylinderHeadPos()
 		--print( "Piston- MotorBlock: " .. tostring(self.MotorBlock) )
 		--print( "Piston- Offset: " .. tostring(self.CylHead) )
-	end
+	--end
 	
 	local wPos = self.MotorBlock:LocalToWorld( self.CylHead )
 	self.vLength = self.Entity:GetPos():Distance( wPos )
 	--print ( self.vLength )
 
-	self.ShouldDraw = GetConVarNumber( "cl_drawthrusterseffects" )
+	
 end
