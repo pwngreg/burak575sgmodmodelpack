@@ -14,38 +14,40 @@ function ENT:Draw()
 	if ( !self:IsOn() ) then return end
 	--if ( self:GetEffect() == "none" ) then return end
 	
-	local vLength = self.vLength / 100
-	local vOffset = self.Entity:GetPos() - self.Entity:GetUp()
-	local vNormal = (vOffset - self.Entity:GetPos()):GetNormalized()
-
-	local scroll = CurTime() * -10
-
-	render.SetMaterial( matFire )
-
-	render.StartBeam( 3 )
-		render.AddBeam( vOffset, 4, scroll, Color( 0, 0, 255, 128) )
-		render.AddBeam( vOffset + vNormal * (40 * vLength), 8, scroll + 1, Color( 255, 255, 255, 128) )
-		render.AddBeam( vOffset + vNormal * (100 * vLength), 6, scroll + 3, Color( 255, 255, 255, 0) )
-	render.EndBeam()
-
-	scroll = scroll * 0.5
-
-	render.UpdateRefractTexture()
-	render.SetMaterial( matHeatWave )
-	render.StartBeam( 3 )
-		render.AddBeam( vOffset, 4, scroll, Color( 0, 0, 255, 128) )
-		render.AddBeam( vOffset + vNormal * (21 * vLength), 6, scroll + 2, Color( 255, 255, 255, 255) )
-		render.AddBeam( vOffset + vNormal * (86 * vLength), 8, scroll + 5, Color( 0, 0, 0, 0) )
-	render.EndBeam()
-
-
-	scroll = scroll * 1.3
-	render.SetMaterial( matFire )
-	render.StartBeam( 3 )
-		render.AddBeam( vOffset, 4, scroll, Color( 0, 0, 255, 128) )
-		render.AddBeam( vOffset + vNormal * (40 * vLength), 6, scroll + 1, Color( 255, 255, 255, 128) )
-		render.AddBeam( vOffset + vNormal * (100 * vLength), 6, scroll + 3, Color( 255, 255, 255, 0) )
-	render.EndBeam()	
+	if ValidEntity(self.MotorBlock) then
+		local vLength = self.vLength / 100
+		local vOffset = self.Entity:GetPos() - self.Entity:GetUp()
+		local vNormal = (vOffset - self.Entity:GetPos()):GetNormalized()
+	
+		local scroll = CurTime() * -10
+	
+		render.SetMaterial( matFire )
+	
+		render.StartBeam( 3 )
+			render.AddBeam( vOffset, 4, scroll, Color( 0, 0, 255, 128) )
+			render.AddBeam( vOffset + vNormal * (40 * vLength), 8, scroll + 1, Color( 255, 255, 255, 128) )
+			render.AddBeam( vOffset + vNormal * (100 * vLength), 6, scroll + 3, Color( 255, 255, 255, 0) )
+		render.EndBeam()
+	
+		scroll = scroll * 0.5
+	
+		render.UpdateRefractTexture()
+		render.SetMaterial( matHeatWave )
+		render.StartBeam( 3 )
+			render.AddBeam( vOffset, 4, scroll, Color( 0, 0, 255, 128) )
+			render.AddBeam( vOffset + vNormal * (21 * vLength), 6, scroll + 2, Color( 255, 255, 255, 255) )
+			render.AddBeam( vOffset + vNormal * (86 * vLength), 8, scroll + 5, Color( 0, 0, 0, 0) )
+		render.EndBeam()
+	
+	
+		scroll = scroll * 1.3
+		render.SetMaterial( matFire )
+		render.StartBeam( 3 )
+			render.AddBeam( vOffset, 4, scroll, Color( 0, 0, 255, 128) )
+			render.AddBeam( vOffset + vNormal * (40 * vLength), 6, scroll + 1, Color( 255, 255, 255, 128) )
+			render.AddBeam( vOffset + vNormal * (100 * vLength), 6, scroll + 3, Color( 255, 255, 255, 0) )
+		render.EndBeam()
+	end	
 end
 
 
@@ -70,15 +72,17 @@ function ENT:Think()
 		self.vLength = 5
 	end --]]
 	
-	--if self.MotorBlock == nil then
+	if self.MotorBlock == nil or !ValidEntity(self.MotorBlock) then
 		self.MotorBlock = self:GetMotorBlock()
 		self.CylHead = self:GetCylinderHeadPos()
 		--print( "Piston- MotorBlock: " .. tostring(self.MotorBlock) )
 		--print( "Piston- Offset: " .. tostring(self.CylHead) )
-	--end
+	end
 	
-	local wPos = self.MotorBlock:LocalToWorld( self.CylHead )
-	self.vLength = self.Entity:GetPos():Distance( wPos )
+	if ValidEntity(self.MotorBlock) then
+		local wPos = self.MotorBlock:LocalToWorld( self.CylHead )
+		self.vLength = self.Entity:GetPos():Distance( wPos )
+	end
 	--print ( self.vLength )
 
 	

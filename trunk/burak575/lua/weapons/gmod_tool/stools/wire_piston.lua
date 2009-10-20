@@ -8,6 +8,8 @@ TOOL.ClientConVar[ "length" ] = "20" -- cylinder length
 TOOL.ClientConVar[ "sound" ] = "" -- piston sound
 TOOL.ClientConVar[ "multiplier" ] = "" -- force multiplier
 TOOL.ClientConVar[ "fx" ] = "" -- effects
+TOOL.ClientConVar[ "invisconst" ] = "" -- invisible constraint
+
 
 
 if CLIENT then
@@ -19,6 +21,8 @@ if CLIENT then
 	language.Add( "WirePistonTool_multiplier", "Force Multiplier:" )
 	language.Add( "WirePistonTool_sound", "Sound Effect:" )
 	language.Add( "WirePistonTool_fx", "Combustion Effect" )
+	language.Add( "WirePistonTool_invisconst", "Invisible Constraints" )
+	
 	language.Add( "undone_wirepiston", "Undone Wire Piston" )
 end
 
@@ -34,7 +38,7 @@ end
 concommand.Add("GetPlayerPosition" , GetPlayerPos)
 --]]
 
-local function CreateSliderByTrace(fromtrace, totrace, offset)
+local function CreateSliderByTrace(fromtrace, totrace, offset,invis)
 	local Phys1 = fromtrace.Entity:GetPhysicsObject()
 	local Phys2 = totrace.Entity:GetPhysicsObject()
 	
@@ -42,12 +46,15 @@ local function CreateSliderByTrace(fromtrace, totrace, offset)
 	local Bone1, Bone2 = fromtrace.PhysicsBone,	totrace.PhysicsBone
 	local LPos1, LPos2 = Phys1:WorldToLocal(fromtrace.HitPos + offset) ,	Phys2:WorldToLocal(totrace.HitPos + offset)
 	
-	local ctr,rope = constraint.Slider( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, 0.5 )
+	local ropesize = 0
+	if !invis then ropesize = 0.5 end
+	
+	local ctr,rope = constraint.Slider( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, ropesize )
 	
 	return ctr,rope
 end
 
-local function CreateRopeByTrace(fromtrace, totrace,length)
+local function CreateRopeByTrace(fromtrace, totrace,length,invis)
 	local Phys1 = fromtrace.Entity:GetPhysicsObject()
 	local Phys2 = totrace.Entity:GetPhysicsObject()
 	
@@ -55,7 +62,10 @@ local function CreateRopeByTrace(fromtrace, totrace,length)
 	local Bone1, Bone2 = fromtrace.PhysicsBone,	totrace.PhysicsBone
 	local LPos1, LPos2 = Phys1:WorldToLocal(fromtrace.HitPos) ,	Phys2:WorldToLocal(totrace.HitPos)
 	
-	local ctr,rope = constraint.Rope( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, length, 0, 0, 1, "cable/blue", false )
+	local ropesize = 0
+	if !invis then ropesize = 1 end
+	
+	local ctr,rope = constraint.Rope( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, length, 0, 0, ropesize, "cable/blue", false )
 	
 	return ctr,rope
 end
@@ -75,6 +85,7 @@ function TOOL:LeftClick( trace )
 	local length 	= self:GetClientNumber( "length" )
 	local model 		= self:GetClientInfo( "model" )
 	local fx = self:GetClientInfo( "fx" )
+	local invisconst = self:GetClientInfo( "invisconst" )
 	
 	--print ( "Piston tool: " .. trace.Entity:GetClass() .. " - " .. tostring(trace.Entity.pl) )
 	if trace.Entity:IsValid() and trace.Entity:GetClass() == "gmod_wire_piston" and trace.Entity.pl == ply then
@@ -85,7 +96,7 @@ function TOOL:LeftClick( trace )
 		return true
 	end
 	
-	if not self:GetSWEP():CheckLimit( "wire_pistons" ) then return false end
+	if not ply:CheckLimit( "wire_pistons" ) then return false end
 	
 	print("Creating Piston...")
 	
@@ -101,7 +112,10 @@ function TOOL:LeftClick( trace )
 	pistonphys:EnableMotion(false)
 	
 	piston:SetMotorBlock(trace.Entity)
-	piston:SetCylinderHeadPos( trace.Entity:WorldToLocal(trace.HitPos) )	
+	piston:SetCylinderHeadPos( trace.Entity:WorldToLocal(trace.HitPos) )
+	
+	piston:SetMBlock(trace.Entity)
+	piston:SetAPoint( trace.Entity:WorldToLocal(trace.HitPos) )
 	
 	local tr = {}
 	tr.start = trace.HitPos
@@ -132,11 +146,11 @@ function TOOL:LeftClick( trace )
 	
 	--PrintTable(traces)
 	
-	local cs1,cr1 = CreateSliderByTrace(trace,tr,rotatedpoints[1])
-	local cs2,cr2 = CreateSliderByTrace(trace,tr,rotatedpoints[2])
+	local cs1,cr1 = CreateSliderByTrace(trace,tr,rotatedpoints[1],invisconst)
+	local cs2,cr2 = CreateSliderByTrace(trace,tr,rotatedpoints[2],invisconst)
 	--local cs3,cr3 = CreateSliderByTrace(tr,trace,rotatedpoints[3],rotatedpoints[3])
 	--local cs4,cr4 = CreateSliderByTrace(tr,trace,rotatedpoints[4],rotatedpoints[4])
-	local cs5,cr5 = CreateRopeByTrace(tr,trace,length)
+	local cs5,cr5 = CreateRopeByTrace(tr,trace,length,invisconst)
 	
 	piston:SetPos(trace.HitPos)
 	
@@ -240,6 +254,7 @@ function TOOL.BuildCPanel(panel)
 	panel:AddControl("ComboBox", weaponSounds )
 	
 	panel:AddControl( "Checkbox", { Label = "#WirePistonTool_fx", Command = "wire_piston_fx" } )
+	panel:AddControl( "Checkbox", { Label = "#WirePistonTool_invisconst", Command = "wire_piston_invisconst" } )
 	
 	--[[	
 	panel:AddControl( "PropSelect", {

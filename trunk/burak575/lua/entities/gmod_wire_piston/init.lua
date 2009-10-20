@@ -34,11 +34,20 @@ function ENT:Think()
 			self.PlaySound = false
 		end
 	else
+		self.Entity:StopSound( self.Sound )
 		self:SetOn(false)
 		self.PlaySound = true
 	end
 	self.Entity:NextThink(CurTime() + 0.1)
 	return true
+end
+
+function ENT:OnRemove()
+	self.BaseClass.OnRemove(self)
+	
+	if ( self.Sound != "" ) then
+		self.Entity:StopSound(self.Sound)
+	end
 end
 
 
@@ -92,6 +101,24 @@ end
 
 function ENT:SetFX( fs )
 	self.FX = fs
+end
+
+-- Attached Block
+function ENT:GetMBlock()
+	return self.MBlock
+end
+
+function ENT:SetMBlock( fs )
+	self.MBlock = fs
+end
+
+-- Attached Point
+function ENT:GetAPoint()
+	return self.APoint
+end
+
+function ENT:SetAPoint( fs )
+	self.APoint = fs
 end
 
 function MakeWirePiston( ply, Pos, Ang, model, force, sound, length,fx)
