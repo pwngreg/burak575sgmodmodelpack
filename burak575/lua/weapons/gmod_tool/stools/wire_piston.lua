@@ -111,7 +111,7 @@ function TOOL:LeftClick( trace )
 	local pUp = trace.HitNormal * -1 -- piston up vector
 	local dUp = bUp:Distance(pUp) -- distance between them	
 	
-	print( "Block Up: " .. tostring(bUp) .. "  Piston Up: " .. tostring(pUp) .. " Dist:" .. dUp  )	
+	--print( "Block Up: " .. tostring(bUp) .. "  Piston Up: " .. tostring(pUp) .. " Dist:" .. dUp  )	
 	
 	local shouldfix = false
 	
