@@ -31,3 +31,12 @@ end
 function ENT:GetCylinderHeadPos()
 	return self.Entity:GetNetworkedVector("CylinderHead")
 end
+
+function ENT:SetReverseFix( bl )
+	self.Entity:SetNetworkedBool("Reversed",bl)
+end
+
+function ENT:GetReverseFix()
+	return self.Entity:GetNetworkedBool("Reversed")
+end
+

@@ -26,7 +26,13 @@ end
 function ENT:Think()
 	local phys = self.Entity:GetPhysicsObject()
 	if self.F > 0.1 or self.F < -0.1   then
-		phys:ApplyForceCenter( (self.Entity:GetUp() ) * self.Force * self.F )
+	
+		if self.Reversed then
+			phys:ApplyForceCenter( (self.Entity:GetUp() ) * self.Force * self.F )
+		else
+			phys:ApplyForceCenter( (self.Entity:GetUp() ) * self.Force * self.F * -1 )
+		end
+		
 		self:SetOn(true)
 		if self.PlaySound then
 			self.Entity:StopSound( self.Sound )
@@ -121,7 +127,16 @@ function ENT:SetAPoint( fs )
 	self.APoint = fs
 end
 
-function MakeWirePiston( ply, Pos, Ang, model, force, sound, length,fx)
+-- Reversed Point
+function ENT:GetReversed()
+	return self.Reversed
+end
+
+function ENT:SetReversed( fs )
+	self.Reversed = fs
+end
+
+function MakeWirePiston( ply, Pos, Ang, model, force, sound, length,fx )
 	
 	if not ply:CheckLimit( "wire_pistons" ) then return nil end
 	

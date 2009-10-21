@@ -16,7 +16,11 @@ function ENT:Draw()
 	
 	if ValidEntity(self.MotorBlock) then
 		local vLength = self.vLength / 100
+		
 		local vOffset = self.Entity:GetPos() - self.Entity:GetUp()
+		if (self.Reversed) then
+			vOffset = self.Entity:GetPos() + self.Entity:GetUp()
+		end
 		local vNormal = (vOffset - self.Entity:GetPos()):GetNormalized()
 	
 		local scroll = CurTime() * -10
@@ -75,6 +79,7 @@ function ENT:Think()
 	if self.MotorBlock == nil or !ValidEntity(self.MotorBlock) then
 		self.MotorBlock = self:GetMotorBlock()
 		self.CylHead = self:GetCylinderHeadPos()
+		self.Reversed = self:GetReverseFix()
 		--print( "Piston- MotorBlock: " .. tostring(self.MotorBlock) )
 		--print( "Piston- Offset: " .. tostring(self.CylHead) )
 	end
