@@ -10,7 +10,10 @@ TOOL.ClientConVar[ "multiplier" ] = "" -- force multiplier
 TOOL.ClientConVar[ "fx" ] = "" -- effects
 TOOL.ClientConVar[ "invisconst" ] = "" -- invisible constraint
 
-
+if ( SERVER ) then
+	CreateConVar('sbox_maxwire_pistons', 25)
+end
+t
 
 if CLIENT then
     language.Add( "Tool_wire_piston_name", "Piston Tool (Wire)" )
@@ -26,9 +29,6 @@ if CLIENT then
 	language.Add( "undone_wirepiston", "Undone Wire Piston" )
 end
 
-if SERVER then
-	CreateConVar('sbox_maxwire_pistons', 25)
-end
 
 --[[
 function GetPlayerPos()
@@ -106,8 +106,26 @@ function TOOL:LeftClick( trace )
 	local Ang = trace.HitNormal:Angle()
 	Ang.pitch = Ang.pitch + 90
 	
-	local piston = MakeWirePiston(ply, trace.HitPos + (trace.HitNormal * 5), Ang, model,force,sound,length,fx)
+	-- HERE COMES DIRTY FIX FOR SPAZZING SLIDER
+	local bUp = trace.Entity:GetUp() -- motor block up vector
+	local pUp = trace.HitNormal * -1 -- piston up vector
+	local dUp = bUp:Distance(pUp) -- distance between them	
 	
+	print( "Block Up: " .. tostring(bUp) .. "  Piston Up: " .. tostring(pUp) .. " Dist:" .. dUp  )	
+	
+	local shouldfix = false
+	
+	if (dUp < 0.10) then
+		shouldfix = true
+		Ang.pitch = Ang.pitch - 180
+		--print("PISTON REVERSED!!! (for fixing slider spazz)")
+	end
+	
+	local piston = MakeWirePiston(ply, trace.HitPos + (trace.HitNormal * 5), Ang, model,force,sound,length,fx)
+	piston:SetReverseFix(shouldfix)
+	piston:SetReversed(shouldfix)
+
+
 	local pistonphys = piston:GetPhysicsObject()
 	pistonphys:EnableMotion(false)
 	
