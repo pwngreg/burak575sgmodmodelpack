@@ -13,7 +13,6 @@ TOOL.ClientConVar[ "invisconst" ] = "" -- invisible constraint
 if ( SERVER ) then
 	CreateConVar('sbox_maxwire_pistons', 25)
 end
-t
 
 if CLIENT then
     language.Add( "Tool_wire_piston_name", "Piston Tool (Wire)" )
