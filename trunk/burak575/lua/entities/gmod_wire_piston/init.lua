@@ -27,9 +27,11 @@ function ENT:Think()
 	local phys = self.Entity:GetPhysicsObject()
 	if self.F > 0.1 or self.F < -0.1   then
 	
-		if self.Reversed then
+		if !self.Reversed then
+			--print("Reversed thrust")
 			phys:ApplyForceCenter( (self.Entity:GetUp() ) * self.Force * self.F )
 		else
+			--print("normal thrust")
 			phys:ApplyForceCenter( (self.Entity:GetUp() ) * self.Force * self.F * -1 )
 		end
 		
