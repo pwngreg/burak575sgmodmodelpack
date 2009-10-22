@@ -121,7 +121,11 @@ function TOOL:LeftClick( trace )
 	end
 	
 	local piston = MakeWirePiston(ply, trace.HitPos + (trace.HitNormal * 5), Ang, model,force,sound,length,fx)
-	piston:SetReverseFix(shouldfix)
+	
+	if !piston:IsValid() then
+		print "Piston creation failed!"
+		return
+	end
 	piston:SetReversed(shouldfix)
 
 
@@ -169,7 +173,9 @@ function TOOL:LeftClick( trace )
 	--local cs4,cr4 = CreateSliderByTrace(tr,trace,rotatedpoints[4],rotatedpoints[4])
 	local cs5,cr5 = CreateRopeByTrace(tr,trace,length,invisconst)
 	
+	--piston:SetAngles( Angle(0,0,0) )
 	piston:SetPos(trace.HitPos)
+	--piston:SetAngles ( Ang )
 	
 	undo.Create( "wirepiston" )
 		undo.AddEntity( cs1 )
