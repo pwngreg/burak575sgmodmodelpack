@@ -3,8 +3,6 @@ AddCSLuaFile( "shared.lua" )
 
 ENT.WireDebugName = "Piston"
 
-print ("Loading piston init.lua...")
-
 include('shared.lua')
 
 function ENT:Initialize()

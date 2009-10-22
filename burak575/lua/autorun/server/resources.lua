@@ -14,3 +14,4 @@ end
  
 AddDir("models/burak575")
 AddDir("materials/models/burak575")
+resource.AddFile("settings/spawnlist/burak575 props.txt")
