@@ -17,7 +17,7 @@ end
 if CLIENT then
     language.Add( "Tool_wire_piston_name", "Piston Tool (Wire)" )
     language.Add( "Tool_wire_piston_desc", "Makes a controllable piston" )
-    language.Add( "Tool_wire_piston_0", "Primary: Place piston / Secondary: Connect to axle (if known axle model)" )
+    language.Add( "Tool_wire_piston_0", "Primary: Place piston, Reload: Change all piston paramaters that in hull of target prop" )
     language.Add( "WirePistonTool_model", "Model:" )
     language.Add( "WirePistonTool_length", "Cylinder Length:" )
 	language.Add( "WirePistonTool_multiplier", "Force Multiplier:" )
@@ -70,6 +70,39 @@ local function CreateRopeByTrace(fromtrace, totrace,length,invis)
 end
 
 function TOOL:Reload( trace )
+	if ( trace.Entity:IsValid() && trace.Entity:IsPlayer() ) then return end
+	if ( SERVER && !util.IsValidPhysicsObject( trace.Entity, trace.PhysicsBone ) ) then return false end
+	
+	local ply = self:GetOwner()
+	
+	local force 		= self:GetClientNumber( "multiplier" )
+	local sound 		= self:GetClientInfo( "sound" )
+	local length 	= self:GetClientNumber( "length" )
+	local model 		= self:GetClientInfo( "model" )
+	local fx = self:GetClientInfo( "fx" )
+	local invisconst = self:GetClientInfo( "invisconst" )
+	
+	if trace.Entity:IsValid() then
+		
+		--trace.Entity:Setup(force,length,sound,fx)
+		local blockmin = trace.Entity:LocalToWorld(trace.Entity:OBBMins())
+		local blockmax = trace.Entity:LocalToWorld(trace.Entity:OBBMaxs())
+		local updatedpistons = 0
+		
+		local pistonsents = ents.FindInBox( blockmin, blockmax )
+		
+		for _,ent in pairs(pistonsents) do
+			if ent:IsValid() and ent:GetClass() == "gmod_wire_piston" and ent.pl == ply then
+				ent:Setup(force,length,sound,fx)
+				updatedpistons = updatedpistons + 1
+			end
+		end
+		
+		--print ( updatedpistons .. " piston parameters changed" )
+		--GM:AddNotify("Obey the rules.", NOTIFY_GENERIC, 5);
+		WireLib.AddNotify(ply,  updatedpistons .. " pistons updated", NOTIFY_HINT, 4 )
+		return true
+	end
 	
 end
 
@@ -174,7 +207,9 @@ function TOOL:LeftClick( trace )
 	local cs5,cr5 = CreateRopeByTrace(tr,trace,length,invisconst)
 	
 	--piston:SetAngles( Angle(0,0,0) )
-	piston:SetPos(trace.HitPos)
+	local lng = math.abs(piston:OBBMaxs().z - piston:OBBMins().z) / 2
+	--print("moving by: " .. lng)
+	piston:SetPos(trace.HitPos + (trace.HitNormal * lng)) -- fix the negative position problem
 	--piston:SetAngles ( Ang )
 	
 	undo.Create( "wirepiston" )
