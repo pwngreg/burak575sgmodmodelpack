@@ -12,15 +12,12 @@ function ENT:Draw()
 	if ( self.ShouldDraw == 0 ) then return end
 
 	if ( !self:IsOn() ) then return end
-	--if ( self:GetEffect() == "none" ) then return end
 	
 	if ValidEntity(self.MotorBlock) then
 		local vLength = self.vLength / 100
 		
 		local vOffset = self.Entity:LocalToWorld( self:GetOffset() )
-		--if (self.Reversed) then
-		--	vOffset = self.Entity:GetPos() + self.Entity:GetUp()
-		--end
+
 		local vNormal = (vOffset - self.Entity:GetPos()):GetNormalized()
 	
 		local scroll = CurTime() * -10
@@ -62,33 +59,15 @@ function ENT:Think()
 	
 	if !self.ShouldDraw then return end
 	
-	--[[local tr = {}
-	tr.start = self:GetPos()
-	tr.endpos = tr.start + (self:GetUp() * 10)
-	tr.filter = {} 
-	tr.filter[1] = self
-	
-	local tr = util.TraceLine( tr )
-	
-	if tr.Hit then
-		self.vLength = tr.StartPos:Distance( tr.HitPos ) + 5
-	else
-		self.vLength = 5
-	end --]]
 	
 	if self.MotorBlock == nil or !ValidEntity(self.MotorBlock) then
 		self.MotorBlock = self:GetMotorBlock()
 		self.CylHead = self:GetCylinderHeadPos()
-		--self.Reversed = self:GetReverseFix()
-		--print( "Piston- MotorBlock: " .. tostring(self.MotorBlock) )
-		--print( "Piston- Offset: " .. tostring(self.CylHead) )
 	end
 	
 	if ValidEntity(self.MotorBlock) then
 		local wPos = self.MotorBlock:LocalToWorld( self.CylHead )
 		self.vLength = self.Entity:GetPos():Distance( wPos )
 	end
-	--print ( self.vLength )
-
 	
 end

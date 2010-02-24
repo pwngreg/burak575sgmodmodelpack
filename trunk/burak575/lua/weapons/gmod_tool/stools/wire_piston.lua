@@ -99,17 +99,7 @@ if ( SERVER ) then
 		
 		Piston:DeleteOnRemove( const )
 		Piston:DeleteOnRemove( sli )
-		
-		--[[print( "Const: " .. tostring(const))
-		print( "Sli: " .. tostring( sli))
-		print( "SRope: " .. tostring(srope))
-		print( "Rope: " .. tostring(rope))
-		
-		if ( rope ) then rope:Fire("SetLength", Length + 100, 0) end
-		if ( srope ) then srope:Fire("SetLength", Length + 100, 0) end
-		if ( sli ) then sli:Fire("SetLength", Length + 100, 0) end
-		if ( const ) then const:Fire("SetLength", Length + 100, 0) end]]-- MMh it doesnt changes the real Length Limit... only visual rope...
-		
+
 		if ( rope ) then Piston:DeleteOnRemove( rope )end
 		if ( srope ) then Piston:DeleteOnRemove( srope ) end
 		
@@ -146,15 +136,6 @@ if CLIENT then
 end
 
 
---[[
-function GetPlayerPos()
-	local mypos = LocalPlayer():GetPos()
-	print("Player position: " .. mypos.x .. " - " .. mypos.y .. " - " .. mypos.z)
-end
-concommand.Add("GetPlayerPosition" , GetPlayerPos)
---]]
-
-
 function TOOL:Reload( trace )
 	if ( trace.Entity:IsValid() && trace.Entity:IsPlayer() ) then return end
 	if ( SERVER && !util.IsValidPhysicsObject( trace.Entity, trace.PhysicsBone ) ) then return false end
@@ -168,6 +149,8 @@ function TOOL:Reload( trace )
 	local fx = self:GetClientInfo( "fx" )
 	local invisconst = self:GetClientNumber( "invisconst" )
 	
+	
+	-- Should I make this with findConstraintEntities instead of hull ?
 	if trace.Entity:IsValid() then
 		
 		--trace.Entity:Setup(force,length,sound,fx)
@@ -194,13 +177,8 @@ end
 
 function TOOL:RightClick( trace )
 	if ( !trace.Entity || !trace.Entity:IsValid() || trace.Entity:IsPlayer() ||trace.Entity.IsWorld() ) then return false end
-	-- should print relative hit pos
-	--local hpos = trace.HitPos			-- hit position
-	--local epos = trace.Entity:GetPos()	-- entity position
-	--local rpos = epos - hpos	-- result position
 	local rpos = trace.Entity:WorldToLocal( trace.HitPos )
-	constraint.RemoveConstraints( trace.Entity, "WirePistonConst" )
-	print( tostring(rpos) .. " Bone:" .. tostring(trace.PhysicsBone) )
+	print( tostring(rpos) )
 end
 
 function TOOL:GetAttachPosForModel( enti )
@@ -209,27 +187,18 @@ function TOOL:GetAttachPosForModel( enti )
 	
 	local mdlData = mdls[ enti:GetModel() ]
 	
-	-- Debug functions
-	--print( "Entity:" .. tostring(enti) )
-	--print( "Mdl Table:" .. table.ToString(mdls,"models",false) )
-	--print( "Mdl Name:" .. tostring(enti:GetModel()) )
-	--print( "Mdl Data:" .. table.ToString(mdlData,"mdl data",false) )
-	
 	if ( !mdlData ) then mdlData = { Flags = "cZ" } end
 	
-	--print( "Mdl Data After:" .. table.ToString(mdlData,"mdl data",false) )
 	local mdlFlags = mdlData["Flags"]
 	
 	local center, axis
 	
 	if ( mdlFlags:find ( "c" ) > 0 ) then
 		center = true
-		--print("Center flag set!")
 	end
 	
 	if (mdlFlags:find ( "Z" ) > 0 ) then
 		axis = "z"
-		--print("Z axis set!")
 	end
 	
 	local obMax = enti:OBBMaxs()
@@ -278,12 +247,8 @@ function TOOL:LeftClick( trace )
 	local fx = self:GetClientInfo( "fx" )
 	local invisconst = self:GetClientNumber( "invisconst" )
 	
-	--print ( "Piston tool: " .. trace.Entity:GetClass() .. " - " .. tostring(trace.Entity.pl) )
 	if trace.Entity:IsValid() and trace.Entity:GetClass() == "gmod_wire_piston" and trace.Entity.pl == ply then
 		trace.Entity:Setup(force,length,sound,fx)
-		--[[ trace.Entity:SetSound( sound )
-		trace.Entity:SetCylLength( cylength )
-		trace.Entity:SetForce( force ) --]]
 		return true
 	end
 	
@@ -291,13 +256,11 @@ function TOOL:LeftClick( trace )
 	
 	print("Creating Piston...")
 	
-	--local Phys = trace.Entity:GetPhysicsObjectNum( trace.PhysicsBone )
-	--self:SetObject( 1, trace.Entity, trace.HitPos, Phys, trace.PhysicsBone, trace.HitNormal )
-	
 	local Ang = trace.HitNormal:Angle()
 	Ang.pitch = Ang.pitch + 90
 	
 	-- HERE COMES DIRTY FIX FOR SPAZZING SLIDER
+	-- Spazzing occurs at certain angles were met. Mostly it spazz when up vector of piston and block are equal.
 	local bUp = trace.Entity:GetUp() -- motor block up vector
 	local pUp = trace.HitNormal * -1 -- piston up vector
 	local dUp = bUp:Distance(pUp) -- distance between them	
@@ -373,18 +336,6 @@ function TOOL:UpdateGhostPiston( ent, player )
 	ent:SetPos( trace.HitPos - trace.HitNormal * min.z )
 	ent:SetAngles( Ang )
 	
-	--[[local tracepoints = { Vector ( 0 , 0 , 2 ) , Vector ( 2 , 0 , 0 ), Vector( 0 , 2 , 0) , Vector (-2,0,0) , Vector (0,-2,0) }
-	local rang = trace.HitNormal:Angle()
-	
-	ent:ClearBeams()
-	for _, pnt in pairs(tracepoints) do
-		local rpnt = pnt
-		rpnt:Rotate(rang)
-		
-		--print("rang: " .. tostring(rang) .. " - rpnt: " .. tostring(rpnt))
-		ent:AddBeam( trace.HitPos, trace.HitPos + rpnt )
-	end --]]
-	
 	ent:SetNoDraw( false )
 end
 
@@ -401,8 +352,6 @@ end
 
 function TOOL.BuildCPanel(panel)
 
-	--WireDermaExts.ModelSelect(panel, "wire_piston_model", Pistons, 1, true)
-	
 	panel:AddControl( "PropSelect", {
 		Label = "#WirePistonTool_model",
 		ConVar = "wire_piston_model",
@@ -427,52 +376,6 @@ function TOOL.BuildCPanel(panel)
 	
 	panel:AddControl( "Checkbox", { Label = "#WirePistonTool_fx", Command = "wire_piston_fx" } )
 	panel:AddControl( "Checkbox", { Label = "#WirePistonTool_invisconst", Command = "wire_piston_invisconst" } )
-	
-	--[[	
-	panel:AddControl( "PropSelect", {
-		Label = "#WirePistonTool_model",
-		ConVar = "wire_piston_model",
-		Category = "WirePistons",
-		Models = list.Get( "Pistons" ) } )
-
-
-	
-	panel:AddControl("CheckBox", {
-		Label = "#XQMWireHydraulicTool_fixed",
-		Command = "xqm_wire_hydraulic_fixed"
-	})
-
-	panel:AddControl("Slider", {
-		Label = "#XQMWireHydraulicTool_width",
-		Type = "Float",
-		Min = "1",
-		Max = "20",
-		Command = "xqm_wire_hydraulic_width"
-	})	
-	
-	panel:AddControl("MaterialGallery", {
-		Label = "#XQMWireHydraulicTool_material",
-		Height = "64",
-		Width = "28",
-		Rows = "1",
-		Stretch = "1",
-
-		Options = {
-			["Wire"] = { Material = "cable/rope_icon", xqm_wire_hydraulic_material = "cable/rope" },
-			["Cable 2"] = { Material = "cable/cable_icon", xqm_wire_hydraulic_material = "cable/cable2" },
-			["XBeam"] = { Material = "cable/xbeam", xqm_wire_hydraulic_material = "cable/xbeam" },
-			["Red Laser"] = { Material = "cable/redlaser", xqm_wire_hydraulic_material = "cable/redlaser" },
-			["Blue Electric"] = { Material = "cable/blue_elec", xqm_wire_hydraulic_material = "cable/blue_elec" },
-			["Physics Beam"] = { Material = "cable/physbeam", xqm_wire_hydraulic_material = "cable/physbeam" },
-			["Hydra"] = { Material = "cable/hydra", xqm_wire_hydraulic_material = "cable/hydra" },
-		},
-
-		CVars = {
-			[0] = "xqm_wire_hydraulic_material"
-		}
-	})
-	
-	--]]
 	
 end
 
