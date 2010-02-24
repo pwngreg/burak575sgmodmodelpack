@@ -74,7 +74,7 @@ function ENT:SetForce( force, mul )
 	end
 	mul = mul or 1
 	
-	local phys = self.Entity:GetPhysicsObject()	
+	local phys = self.Entity:GetPhysicsObject() -- hmm	
 	if (!phys:IsValid()) then
 		Msg("Warning: [gmod_piston] Physics object isn't valid!\n")
 		return
@@ -173,7 +173,7 @@ end--]]
 function ENT:Setup(force, length, snd,fx)
 	self:SetForce(force)
 	
-	self.Length = math.max(length, 1)
+	self:SetLength( math.max(length, 1) )
 	self.F = 0
 	self.Sound = snd
 	self.FX = fx
@@ -188,10 +188,17 @@ function ENT:GetForce()
 	return self.Force
 end--]]
 
--- Cylinder Length
+-- Cylinder Length // if this has changed we gona change its length
 function ENT:SetLength( f )
 	self.Length = f
+	if ( self.const ) then
+		if self.const then self.const:Fire("SetLength", self.Length, 0) end
+		if self.constrope then self.constrope:Fire("SetLength", self.Length, 0) end		
+		-- Update the table of the rope, so when we duplicate, it will not fuck up
+		self.const:SetVar("Length" , self.Length )
+	end
 end
+
 function ENT:GetLength()
 	return self.Length
 end
@@ -214,24 +221,6 @@ function ENT:SetFX( fs )
 	self.FX = fs
 end
 
--- Attached Block
-function ENT:GetMBlock()
-	return self.MBlock
-end
-
-function ENT:SetMBlock( fs )
-	self.MBlock = fs
-end
-
--- Attached Point
-function ENT:GetAPoint()
-	return self.APoint
-end
-
-function ENT:SetAPoint( fs )
-	self.APoint = fs
-end
-
 -- Reversed Point
 function ENT:GetReversed()
 	return self.Reversed
@@ -241,53 +230,3 @@ function ENT:SetReversed( fs )
 	self.Reversed = fs
 end
 
-function MakeWirePiston( ply, Pos, Ang, model, force, sound, length,fx )
-	
-	if not ply:CheckLimit( "wire_pistons" ) then return nil end
-	
-	local piston = ents.Create( "gmod_wire_piston" )
-	if not piston:IsValid() then return false end
-	
-	piston:SetPos( Pos )
-	if Ang then piston:SetAngles( Ang ) end
-	
-	piston:SetModel( model )
-	piston:Spawn()
-	
-	piston:Setup(force,length,sound,fx)
-	piston:SetPlayer( ply )
-	
-	--[[ turret:SetDamage( damage )
-	turret:SetPlayer( ply )
-	
-	turret:SetSpread( spread )
-	turret:SetForce( force )
-	turret:SetSound( sound )
-	turret:SetTracer( tracer )
-	turret:SetTracerNum( tracernum or 1 )
-	
-	turret:SetNumBullets( numbullets )
-	
-	turret:SetDelay( delay ) --]]
-	
-	--if nocollide == true then turret:GetPhysicsObject():EnableCollisions( false ) end
-	
-	-- Defaulty No Collide It
-	piston:GetPhysicsObject():EnableCollisions( false )
-
-	local ttable = {
-		pl			= ply,
-		force		= force,
-		sound		= sound,
-		length		= length,
-		fx			= fx,
-	}
-	table.Merge( piston:GetTable(), ttable )
-	
-	ply:AddCount( "wire_pistons", piston )
-	ply:AddCleanup( "wire_pistons", piston )
-	
-	return piston
-end
-
-duplicator.RegisterEntityClass( "gmod_wire_piston", MakeWirePiston, "Pos", "Ang", "Model", "force", "sound", "length","fx" )
