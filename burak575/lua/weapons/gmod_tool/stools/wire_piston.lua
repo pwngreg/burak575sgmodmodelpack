@@ -10,11 +10,15 @@ TOOL.ClientConVar[ "multiplier" ] = "" -- force multiplier
 TOOL.ClientConVar[ "fx" ] = "" -- effects
 TOOL.ClientConVar[ "invisconst" ] = "" -- invisible constraint
 
+TOOL.ClientConVar[ "modelflags" ] = "cZ" -- model flags for not defined models
+TOOL.ClientConVar[ "dontreverse" ] = "0" -- will not use reverse fix // maybe useful for some models
+TOOL.ClientConVar[ "alwaysreverse" ] = "0" -- will always reverse // maybe useful for some models
+
 if ( SERVER ) then
 	CreateConVar('sbox_maxwire_pistons', 25)
 	
 	-- The idea comes from Wire Hydroaulics
-	function MakeWirePiston( ply, Pos, Ang, model, force, sound, length,fx )
+	function MakeWirePiston( ply, Pos, Ang, model, force, sound, length,fx,reversed )
 		if not ply:CheckLimit( "wire_pistons" ) then return nil end
 	
 		local piston = ents.Create( "gmod_wire_piston" )
@@ -29,6 +33,7 @@ if ( SERVER ) then
 		
 		piston:Setup(force,length,sound,fx)
 		piston:SetPlayer( ply )
+		piston:SetReversed( reversed )
 		
 		
 		-- Defaulty No Collide It
@@ -40,14 +45,15 @@ if ( SERVER ) then
 			force		= force,
 			sound		= sound,
 			length		= length,
-			fx			= fx
+			fx			= fx,
+			reversed	= reversed
 		}
 		table.Merge( piston:GetTable(), ttable )
 		
 		return piston
 	end
 	
-	duplicator.RegisterEntityClass( "gmod_wire_piston", MakeWirePiston, "Pos", "Ang", "Model", "force", "sound", "length","fx" )
+	duplicator.RegisterEntityClass( "gmod_wire_piston", MakeWirePiston, "Pos", "Ang", "Model", "force", "sound", "length","fx","reversed" )
 	
 	function MakeWirePistonConstFromTable( ct )
 		return MakeWirePistonConstraint( ct["pl"] , ct["Ent1"],ct["Ent2"],ct["Bone1"],ct["Bone2"],ct["LPos1"],ct["LPos2"],ct["Invis"],ct["Length"])
@@ -88,11 +94,8 @@ if ( SERVER ) then
 		}
 		const:SetTable( ctable )
 		
-		Piston.const = const
-		Piston.constrope = rope
-		Piston.slider = sli
-		Piston.slirope = srope
-		--Piston.MBlock = Block
+		Piston.const , Piston.rope = const, rope
+		Piston.sli , Piston.srope = sli , srope
 		
 		Piston:SetMotorBlock(Block)
 		Piston:SetCylinderHeadPos( LPos2 )
@@ -180,24 +183,30 @@ function TOOL:RightClick( trace )
 	if ( !trace.Entity || !trace.Entity:IsValid() || trace.Entity:IsPlayer() ||trace.Entity.IsWorld() ) then return false end
 	local rpos = trace.Entity:WorldToLocal( trace.HitPos )
 	print( tostring(rpos) )
+	if ( trace.Entity && trace.Entity:GetClass( ) == "gmod_wire_piston" ) then
+		local p = trace.Entity
+		print ( "Piston Info { Length:" .. tostring(p:GetLength()) .. " , Force Multiplier:" .. tostring(p.force)  .. " , Reversed: " .. tostring(p:GetReversed()) .. " }" )
+	end
 end
 
 function TOOL:GetAttachPosForModel( enti )
 	local mdls = list.GetForEdit("Pistons")
-	
-	
 	local mdlData = mdls[ enti:GetModel() ]
 	
-	if ( !mdlData ) then mdlData = { Flags = "cZ" } end
+	if ( !mdlData ) then
+		local dmf = self:GetClientInfo( "modelflags" ) -- DEFAULT MODEL FLAGS
+		if ( dmf == nil || dmf == "") then dmf = "cZ"  end
+		mdlData = { Flags = dmf }
+	end
 	
 	local mdlFlags = mdlData["Flags"]
 	
 	local center, axis
 	
-	if ( mdlFlags:find ( "c" ) > 0 ) then center = true end
-	if (mdlFlags:find ( "Z" ) > 0 ) then axis = "z" end
-	if (mdlFlags:find ( "X" ) > 0 ) then axis = "x" end
-	if (mdlFlags:find ( "Y" ) > 0 ) then axis = "y" end
+	if mdlFlags:find ("c") then center = true end
+	if mdlFlags:find ("Z") then axis = "z" end
+	if mdlFlags:find ("X") then axis = "x" end
+	if mdlFlags:find ("Y") then axis = "y" end
 	
 	local obMax = enti:OBBMaxs()
 	local obMin = enti:OBBMins()
@@ -245,6 +254,10 @@ function TOOL:LeftClick( trace )
 	local fx = self:GetClientInfo( "fx" )
 	local invisconst = self:GetClientNumber( "invisconst" )
 	
+	local dontreverse = self:GetClientNumber( "dontreverse" )
+	local alwaysreverse = self:GetClientNumber( "alwaysreverse" )
+	
+	
 	if trace.Entity:IsValid() and trace.Entity:GetClass() == "gmod_wire_piston" and trace.Entity.pl == ply then
 		trace.Entity:Setup(force,length,sound,fx)
 		return true
@@ -267,19 +280,30 @@ function TOOL:LeftClick( trace )
 	
 	local shouldfix = false
 	
-	if (dUp < 0.10) then
-		shouldfix = true
-		Ang.pitch = Ang.pitch - 180
-		print("Piston reversed!!! (for fixing slider spazz)")
+	if dontreverse == 0 then
+		if (dUp < 0.10) then
+			shouldfix = true
+			print("Piston reversed!!! (for fixing slider spazz)")
+		end
 	end
 	
-	local piston = MakeWirePiston(ply, trace.HitPos + (trace.HitNormal * 10), Ang, model,force,sound,length,fx)
+	if alwaysreverse == 1 then
+		if shouldfix == false then
+			shouldfix = true
+			print("Piston reversed!!! (for always reverse parameter set)")
+		end
+	end
+	
+	if shouldfix then
+		Ang.pitch = Ang.pitch - 180
+	end
+	
+	local piston = MakeWirePiston(ply, trace.HitPos + (trace.HitNormal * 10), Ang, model,force,sound,length,fx,shouldfix)
 	
 	if !piston:IsValid() then
 		print "Piston creation failed!"
 		return
 	end
-	piston:SetReversed(shouldfix)
 	
 	local Block = trace.Entity
 	local BonePiston = 0

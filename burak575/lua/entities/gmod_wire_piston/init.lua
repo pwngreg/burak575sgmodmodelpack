@@ -190,20 +190,20 @@ end--]]
 -- Cylinder Length // if this has changed we gona change its length
 function ENT:SetLength( f )
 	if self.Length ~= f then
-		print("Cylinder length changing...")
 		self.Length = f
 		if ( self.const ) then
+			print("Cylinder length changing...")
 			-- These codes are fix for that rope doesn't have "change length" after created
 			local ct = table.Copy( self.const:GetTable() )
 			ct["Length"] = self.Length
-			print("Removing piston constraint...")
+			--print("Removing piston constraint...")
 			local rslt = constraint.RemoveConstraints( self.Entity, "WirePistonConst" )
 			if ( rslt ) then
-				print("Constraint successfuly removed, creating new one...")
+				--print("Constraint successfuly removed, creating new one...")
 				MakeWirePistonConstFromTable( ct )
 				self.Entity:GetPhysicsObject():EnableCollisions( false )
 			else
-				print("Constraint remove failed...")
+				print("Piston constraint remove failed...")
 			end
 		end
 	end
