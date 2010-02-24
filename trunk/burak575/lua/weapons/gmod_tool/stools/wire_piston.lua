@@ -175,6 +175,7 @@ function TOOL:Reload( trace )
 	
 end
 
+-- Debug tool...
 function TOOL:RightClick( trace )
 	if ( !trace.Entity || !trace.Entity:IsValid() || trace.Entity:IsPlayer() ||trace.Entity.IsWorld() ) then return false end
 	local rpos = trace.Entity:WorldToLocal( trace.HitPos )
@@ -193,13 +194,10 @@ function TOOL:GetAttachPosForModel( enti )
 	
 	local center, axis
 	
-	if ( mdlFlags:find ( "c" ) > 0 ) then
-		center = true
-	end
-	
-	if (mdlFlags:find ( "Z" ) > 0 ) then
-		axis = "z"
-	end
+	if ( mdlFlags:find ( "c" ) > 0 ) then center = true end
+	if (mdlFlags:find ( "Z" ) > 0 ) then axis = "z" end
+	if (mdlFlags:find ( "X" ) > 0 ) then axis = "x" end
+	if (mdlFlags:find ( "Y" ) > 0 ) then axis = "y" end
 	
 	local obMax = enti:OBBMaxs()
 	local obMin = enti:OBBMins()
