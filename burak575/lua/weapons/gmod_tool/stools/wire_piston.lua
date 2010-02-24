@@ -32,8 +32,8 @@ if ( SERVER ) then
 		
 		
 		-- Defaulty No Collide It
-		piston:GetPhysicsObject():EnableCollisions( false )
-		piston:GetPhysicsObject():EnableMotion(false)
+		piston:GetPhysicsObject():EnableCollisions( false ) -- Is it true to put this here? or should i put it to LeftClick function? When they duplicated...
+		piston:GetPhysicsObject():EnableMotion(false) -- Is it true to put this here? or should i put it to LeftClick function? When they duplicated...
 		
 		local ttable = {
 			pl			= ply,
@@ -49,6 +49,10 @@ if ( SERVER ) then
 	
 	duplicator.RegisterEntityClass( "gmod_wire_piston", MakeWirePiston, "Pos", "Ang", "Model", "force", "sound", "length","fx" )
 	
+	function MakeWirePistonConstFromTable( ct )
+		return MakeWirePistonConstraint( ct["pl"] , ct["Ent1"],ct["Ent2"],ct["Bone1"],ct["Bone2"],ct["LPos1"],ct["LPos2"],ct["Invis"],ct["Length"])
+	end
+	
 	function MakeWirePistonConstraint( pl, Piston, Block, Bone1,Bone2, LPos1, LPos2, Invis, Length )
 		if ( !constraint.CanConstrain( Piston, Bone1 ) ) then return false end
 		if ( !constraint.CanConstrain( Block, Bone2 ) ) then return false end
@@ -61,8 +65,8 @@ if ( SERVER ) then
 		if ( Phys1 == Phys2 ) then return false end
 		
 		local ropesize = 1.0
-		if (Invis == true) then ropesize = 0 end
-		
+		if (Invis == 1 ) then ropesize = 0 end
+				
 		local const,rope = constraint.Rope( Piston, Block, Bone1, Bone2, LPos1, LPos2, Length, 0, 0, ropesize, "cable/blue", false )	
 		if ( !const ) then return nil, rope end
 		
@@ -95,12 +99,24 @@ if ( SERVER ) then
 		
 		Piston:DeleteOnRemove( const )
 		Piston:DeleteOnRemove( sli )
-		if ( rope ) then
-			Piston:DeleteOnRemove( rope )
-		end
 		
-		if ( srope ) then
-			Piston:DeleteOnRemove( srope )
+		--[[print( "Const: " .. tostring(const))
+		print( "Sli: " .. tostring( sli))
+		print( "SRope: " .. tostring(srope))
+		print( "Rope: " .. tostring(rope))
+		
+		if ( rope ) then rope:Fire("SetLength", Length + 100, 0) end
+		if ( srope ) then srope:Fire("SetLength", Length + 100, 0) end
+		if ( sli ) then sli:Fire("SetLength", Length + 100, 0) end
+		if ( const ) then const:Fire("SetLength", Length + 100, 0) end]]-- MMh it doesnt changes the real Length Limit... only visual rope...
+		
+		if ( rope ) then Piston:DeleteOnRemove( rope )end
+		if ( srope ) then Piston:DeleteOnRemove( srope ) end
+		
+		if ( const ) then
+			if sli then const:DeleteOnRemove( sli ) end
+			if srope then const:DeleteOnRemove( srope ) end
+			if rope then const:DeleteOnRemove( rope ) end
 		end
 		
 		Block:DeleteOnRemove( Piston )
@@ -150,7 +166,7 @@ function TOOL:Reload( trace )
 	local length 	= self:GetClientNumber( "length" )
 	local model 		= self:GetClientInfo( "model" )
 	local fx = self:GetClientInfo( "fx" )
-	local invisconst = self:GetClientInfo( "invisconst" )
+	local invisconst = self:GetClientNumber( "invisconst" )
 	
 	if trace.Entity:IsValid() then
 		
@@ -183,8 +199,7 @@ function TOOL:RightClick( trace )
 	--local epos = trace.Entity:GetPos()	-- entity position
 	--local rpos = epos - hpos	-- result position
 	local rpos = trace.Entity:WorldToLocal( trace.HitPos )
-	
-	
+	constraint.RemoveConstraints( trace.Entity, "WirePistonConst" )
 	print( tostring(rpos) .. " Bone:" .. tostring(trace.PhysicsBone) )
 end
 
@@ -194,26 +209,27 @@ function TOOL:GetAttachPosForModel( enti )
 	
 	local mdlData = mdls[ enti:GetModel() ]
 	
-	print( "Entity:" .. tostring(enti) )
-	print( "Mdl Table:" .. table.ToString(mdls,"models",false) )
-	print( "Mdl Name:" .. tostring(enti:GetModel()) )
+	-- Debug functions
+	--print( "Entity:" .. tostring(enti) )
+	--print( "Mdl Table:" .. table.ToString(mdls,"models",false) )
+	--print( "Mdl Name:" .. tostring(enti:GetModel()) )
 	--print( "Mdl Data:" .. table.ToString(mdlData,"mdl data",false) )
 	
 	if ( !mdlData ) then mdlData = { Flags = "cZ" } end
 	
-	print( "Mdl Data After:" .. table.ToString(mdlData,"mdl data",false) )
+	--print( "Mdl Data After:" .. table.ToString(mdlData,"mdl data",false) )
 	local mdlFlags = mdlData["Flags"]
 	
 	local center, axis
 	
 	if ( mdlFlags:find ( "c" ) > 0 ) then
 		center = true
-		print("Center flag set!")
+		--print("Center flag set!")
 	end
 	
 	if (mdlFlags:find ( "Z" ) > 0 ) then
 		axis = "z"
-		print("Z axis set!")
+		--print("Z axis set!")
 	end
 	
 	local obMax = enti:OBBMaxs()
@@ -260,7 +276,7 @@ function TOOL:LeftClick( trace )
 	local length 	= self:GetClientNumber( "length" )
 	local model 		= self:GetClientInfo( "model" )
 	local fx = self:GetClientInfo( "fx" )
-	local invisconst = self:GetClientInfo( "invisconst" )
+	local invisconst = self:GetClientNumber( "invisconst" )
 	
 	--print ( "Piston tool: " .. trace.Entity:GetClass() .. " - " .. tostring(trace.Entity.pl) )
 	if trace.Entity:IsValid() and trace.Entity:GetClass() == "gmod_wire_piston" and trace.Entity.pl == ply then
@@ -296,10 +312,7 @@ function TOOL:LeftClick( trace )
 		print("Piston reversed!!! (for fixing slider spazz)")
 	end
 	
-	local piston = MakeWirePiston(ply, trace.HitPos, Ang, model,force,sound,length,fx)
-	
-	local min = piston:OBBMins()
-	piston:SetPos( trace.HitPos - trace.HitNormal * min.z )
+	local piston = MakeWirePiston(ply, trace.HitPos + (trace.HitNormal * 10), Ang, model,force,sound,length,fx)
 	
 	if !piston:IsValid() then
 		print "Piston creation failed!"
@@ -313,10 +326,18 @@ function TOOL:LeftClick( trace )
 	local LPosPiston = self:GetAttachPosForModel( piston )
 	local LPosBlock = Block:GetPhysicsObject():WorldToLocal(trace.HitPos)
 	
-	print( tostring(LPosPiston) .. " <- piston attach position" )
+	--print( tostring(LPosPiston) .. " <- piston attach position" )
 	
 	
 	local const,rope = MakeWirePistonConstraint( ply , piston, Block, BonePiston, BoneBlock, LPosPiston, LPosBlock, invisconst, length )
+
+	if ( shouldfix ) then
+		local max = piston:OBBMaxs()
+		piston:SetPos( trace.HitPos + trace.HitNormal * max.z )
+	else
+		local min = piston:OBBMins()
+		piston:SetPos( trace.HitPos - trace.HitNormal * min.z )
+	end
 
 	
 	undo.Create( "wirepiston" )

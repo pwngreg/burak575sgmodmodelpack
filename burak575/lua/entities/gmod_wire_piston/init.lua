@@ -172,8 +172,7 @@ end--]]
 
 function ENT:Setup(force, length, snd,fx)
 	self:SetForce(force)
-	
-	self:SetLength( math.max(length, 1) )
+	self:SetLength ( math.max(length, 1) )
 	self.F = 0
 	self.Sound = snd
 	self.FX = fx
@@ -190,12 +189,23 @@ end--]]
 
 -- Cylinder Length // if this has changed we gona change its length
 function ENT:SetLength( f )
-	self.Length = f
-	if ( self.const ) then
-		if self.const then self.const:Fire("SetLength", self.Length, 0) end
-		if self.constrope then self.constrope:Fire("SetLength", self.Length, 0) end		
-		-- Update the table of the rope, so when we duplicate, it will not fuck up
-		self.const:SetVar("Length" , self.Length )
+	if self.Length ~= f then
+		print("Cylinder length changing...")
+		self.Length = f
+		if ( self.const ) then
+			-- These codes are fix for that rope doesn't have "change length" after created
+			local ct = table.Copy( self.const:GetTable() )
+			ct["Length"] = self.Length
+			print("Removing piston constraint...")
+			local rslt = constraint.RemoveConstraints( self.Entity, "WirePistonConst" )
+			if ( rslt ) then
+				print("Constraint successfuly removed, creating new one...")
+				MakeWirePistonConstFromTable( ct )
+				self.Entity:GetPhysicsObject():EnableCollisions( false )
+			else
+				print("Constraint remove failed...")
+			end
+		end
 	end
 end
 
