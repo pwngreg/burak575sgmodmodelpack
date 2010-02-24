@@ -12,6 +12,107 @@ TOOL.ClientConVar[ "invisconst" ] = "" -- invisible constraint
 
 if ( SERVER ) then
 	CreateConVar('sbox_maxwire_pistons', 25)
+	
+	-- The idea comes from Wire Hydroaulics
+	function MakeWirePiston( ply, Pos, Ang, model, force, sound, length,fx )
+		if not ply:CheckLimit( "wire_pistons" ) then return nil end
+	
+		local piston = ents.Create( "gmod_wire_piston" )
+		if not piston:IsValid() then return false end
+		
+		piston:SetPos( Pos )
+		piston:SetAngles( Ang )
+		
+		piston:SetModel( model )
+		
+		piston:Spawn()
+		
+		piston:Setup(force,length,sound,fx)
+		piston:SetPlayer( ply )
+		
+		
+		-- Defaulty No Collide It
+		piston:GetPhysicsObject():EnableCollisions( false )
+		piston:GetPhysicsObject():EnableMotion(false)
+		
+		local ttable = {
+			pl			= ply,
+			force		= force,
+			sound		= sound,
+			length		= length,
+			fx			= fx
+		}
+		table.Merge( piston:GetTable(), ttable )
+		
+		return piston
+	end
+	
+	duplicator.RegisterEntityClass( "gmod_wire_piston", MakeWirePiston, "Pos", "Ang", "Model", "force", "sound", "length","fx" )
+	
+	function MakeWirePistonConstraint( pl, Piston, Block, Bone1,Bone2, LPos1, LPos2, Invis, Length )
+		if ( !constraint.CanConstrain( Piston, Bone1 ) ) then return false end
+		if ( !constraint.CanConstrain( Block, Bone2 ) ) then return false end
+		
+		local Phys1 = Piston:GetPhysicsObjectNum( Bone1 )
+		local Phys2 = Block:GetPhysicsObjectNum( Bone2 )
+		local WPos1 = Phys1:LocalToWorld( LPos1 )
+		local WPos2 = Phys2:LocalToWorld( LPos2 )
+		
+		if ( Phys1 == Phys2 ) then return false end
+		
+		local ropesize = 1.0
+		if (Invis == true) then ropesize = 0 end
+		
+		local const,rope = constraint.Rope( Piston, Block, Bone1, Bone2, LPos1, LPos2, Length, 0, 0, ropesize, "cable/blue", false )	
+		if ( !const ) then return nil, rope end
+		
+		local sli,srope = constraint.Slider( Piston, Block, Bone1, Bone2, LPos1, LPos2, ropesize )
+		sli:SetTable( {} ) -- wtf is that? possibly avoid from duping it?
+		
+		
+		local ctable = {
+			Type     = "WirePistonConst",
+			pl       = pl,
+			Ent1   	 = Piston,
+			Ent2     = Block,
+			Bone1    = Bone1,
+			Bone2    = Bone2,
+			LPos1    = LPos1,
+			LPos2    = LPos2,
+			Invis    = Invis,
+			Length 	 = Length
+		}
+		const:SetTable( ctable )
+		
+		Piston.const = const
+		Piston.constrope = rope
+		Piston.slider = sli
+		Piston.slirope = srope
+		--Piston.MBlock = Block
+		
+		Piston:SetMotorBlock(Block)
+		Piston:SetCylinderHeadPos( LPos2 )
+		
+		Piston:DeleteOnRemove( const )
+		Piston:DeleteOnRemove( sli )
+		if ( rope ) then
+			Piston:DeleteOnRemove( rope )
+		end
+		
+		if ( srope ) then
+			Piston:DeleteOnRemove( srope )
+		end
+		
+		Block:DeleteOnRemove( Piston )
+		
+		
+		--const:DeleteOnRemove( Piston )
+		--sli:DeleteOnRemove( Piston )
+		
+		return const, rope
+	end
+	
+	duplicator.RegisterConstraint( "WirePistonConst", MakeWirePistonConstraint, "pl", "Ent1", "Ent2", "Bone1", "Bone2", "LPos1", "LPos2", "Invis", "Length" )	
 end
 
 if CLIENT then
@@ -37,37 +138,6 @@ end
 concommand.Add("GetPlayerPosition" , GetPlayerPos)
 --]]
 
-local function CreateSliderByTrace(fromtrace, totrace, offset,invis)
-	local Phys1 = fromtrace.Entity:GetPhysicsObject()
-	local Phys2 = totrace.Entity:GetPhysicsObject()
-	
-	local Ent1,  Ent2  = fromtrace.Entity,	 	totrace.Entity
-	local Bone1, Bone2 = fromtrace.PhysicsBone,	totrace.PhysicsBone
-	local LPos1, LPos2 = Phys1:WorldToLocal(fromtrace.HitPos + offset) ,	Phys2:WorldToLocal(totrace.HitPos + offset)
-	
-	local ropesize = 0
-	if !invis then ropesize = 0.5 end
-	
-	local ctr,rope = constraint.Slider( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, ropesize )
-	
-	return ctr,rope
-end
-
-local function CreateRopeByTrace(fromtrace, totrace,length,invis)
-	local Phys1 = fromtrace.Entity:GetPhysicsObject()
-	local Phys2 = totrace.Entity:GetPhysicsObject()
-	
-	local Ent1,  Ent2  = fromtrace.Entity,	 	totrace.Entity
-	local Bone1, Bone2 = fromtrace.PhysicsBone,	totrace.PhysicsBone
-	local LPos1, LPos2 = Phys1:WorldToLocal(fromtrace.HitPos) ,	Phys2:WorldToLocal(totrace.HitPos)
-	
-	local ropesize = 0
-	if !invis then ropesize = 1 end
-	
-	local ctr,rope = constraint.Rope( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, length, 0, 0, ropesize, "cable/blue", false )
-	
-	return ctr,rope
-end
 
 function TOOL:Reload( trace )
 	if ( trace.Entity:IsValid() && trace.Entity:IsPlayer() ) then return end
@@ -104,6 +174,79 @@ function TOOL:Reload( trace )
 		return true
 	end
 	
+end
+
+function TOOL:RightClick( trace )
+	if ( !trace.Entity || !trace.Entity:IsValid() || trace.Entity:IsPlayer() ||trace.Entity.IsWorld() ) then return false end
+	-- should print relative hit pos
+	--local hpos = trace.HitPos			-- hit position
+	--local epos = trace.Entity:GetPos()	-- entity position
+	--local rpos = epos - hpos	-- result position
+	local rpos = trace.Entity:WorldToLocal( trace.HitPos )
+	
+	
+	print( tostring(rpos) .. " Bone:" .. tostring(trace.PhysicsBone) )
+end
+
+function TOOL:GetAttachPosForModel( enti )
+	local mdls = list.GetForEdit("Pistons")
+	
+	
+	local mdlData = mdls[ enti:GetModel() ]
+	
+	print( "Entity:" .. tostring(enti) )
+	print( "Mdl Table:" .. table.ToString(mdls,"models",false) )
+	print( "Mdl Name:" .. tostring(enti:GetModel()) )
+	--print( "Mdl Data:" .. table.ToString(mdlData,"mdl data",false) )
+	
+	if ( !mdlData ) then mdlData = { Flags = "cZ" } end
+	
+	print( "Mdl Data After:" .. table.ToString(mdlData,"mdl data",false) )
+	local mdlFlags = mdlData["Flags"]
+	
+	local center, axis
+	
+	if ( mdlFlags:find ( "c" ) > 0 ) then
+		center = true
+		print("Center flag set!")
+	end
+	
+	if (mdlFlags:find ( "Z" ) > 0 ) then
+		axis = "z"
+		print("Z axis set!")
+	end
+	
+	local obMax = enti:OBBMaxs()
+	local obMin = enti:OBBMins()
+	
+	if (center) then
+		if ( axis == "z") then
+			if ( enti:GetReversed() ) then
+				return Vector( 0, 0, obMax.z )
+			else
+				return Vector( 0 , 0 , obMin.z )
+			end
+		end
+
+		if ( axis == "x") then
+			if ( enti:GetReversed() ) then
+				return Vector( obMax.x, 0, 0)
+			else
+				return Vector( obMin.x , 0 , 0 )
+			end
+		end
+
+		if ( axis == "y") then
+			if ( enti:GetReversed() ) then
+				return Vector( 0, obMax.y, 0)
+			else
+				return Vector( 0 , obMin.y , 0 )
+			end
+		end
+	end
+	
+	
+
 end
 
 function TOOL:LeftClick( trace )
@@ -150,86 +293,36 @@ function TOOL:LeftClick( trace )
 	if (dUp < 0.10) then
 		shouldfix = true
 		Ang.pitch = Ang.pitch - 180
-		--print("PISTON REVERSED!!! (for fixing slider spazz)")
+		print("Piston reversed!!! (for fixing slider spazz)")
 	end
 	
-	local piston = MakeWirePiston(ply, trace.HitPos + (trace.HitNormal * 5), Ang, model,force,sound,length,fx)
+	local piston = MakeWirePiston(ply, trace.HitPos, Ang, model,force,sound,length,fx)
+	
+	local min = piston:OBBMins()
+	piston:SetPos( trace.HitPos - trace.HitNormal * min.z )
 	
 	if !piston:IsValid() then
 		print "Piston creation failed!"
 		return
 	end
 	piston:SetReversed(shouldfix)
+	
+	local Block = trace.Entity
+	local BonePiston = 0
+	local BoneBlock = trace.PhysicsBone
+	local LPosPiston = self:GetAttachPosForModel( piston )
+	local LPosBlock = Block:GetPhysicsObject():WorldToLocal(trace.HitPos)
+	
+	print( tostring(LPosPiston) .. " <- piston attach position" )
+	
+	
+	local const,rope = MakeWirePistonConstraint( ply , piston, Block, BonePiston, BoneBlock, LPosPiston, LPosBlock, invisconst, length )
 
-
-	local pistonphys = piston:GetPhysicsObject()
-	pistonphys:EnableMotion(false)
-	
-	piston:SetMotorBlock(trace.Entity)
-	piston:SetCylinderHeadPos( trace.Entity:WorldToLocal(trace.HitPos) )
-	
-	piston:SetMBlock(trace.Entity)
-	piston:SetAPoint( trace.Entity:WorldToLocal(trace.HitPos) )
-	
-	local tr = {}
-	tr.start = trace.HitPos
-	tr.endpos = tr.start + (trace.HitNormal * 10)
-	tr.filter = {} 
-	tr.filter[1] = self:GetOwner()
-	if (trace.Entity:IsValid()) then
-		tr.filter[2] = trace.Entity
-	end
-	
-	local tr = util.TraceLine( tr )
-	if ( !tr.Hit ) then
-		piston:Remove()
-		print("Piston placement failed")
-		return
-	end
-	
-	-- up, front , right , back , left
-	local tracepoints = { Vector ( 0 , 2 , 0 ), Vector(0 , -2 , 0) }
-	local rang = trace.HitNormal:Angle()
-	local rotatedpoints = {}
-	
-	for _, pnt in pairs(tracepoints) do
-		local rpnt = pnt
-		rpnt:Rotate(rang)
-		table.insert(rotatedpoints, rpnt)
-	end
-	
-	--PrintTable(traces)
-	
-	local cs1,cr1 = CreateSliderByTrace(trace,tr,rotatedpoints[1],invisconst)
-	local cs2,cr2 = CreateSliderByTrace(trace,tr,rotatedpoints[2],invisconst)
-	--local cs3,cr3 = CreateSliderByTrace(tr,trace,rotatedpoints[3],rotatedpoints[3])
-	--local cs4,cr4 = CreateSliderByTrace(tr,trace,rotatedpoints[4],rotatedpoints[4])
-	local cs5,cr5 = CreateRopeByTrace(tr,trace,length,invisconst)
-	
-	--piston:SetAngles( Angle(0,0,0) )
-	local lng = math.abs(piston:OBBMaxs().z - piston:OBBMins().z) / 2
-	--print("moving by: " .. lng)
-	piston:SetPos(trace.HitPos + (trace.HitNormal * lng)) -- fix the negative position problem
-	--piston:SetAngles ( Ang )
 	
 	undo.Create( "wirepiston" )
-		undo.AddEntity( cs1 )
-		if cr1 then undo.AddEntity( cr1 ) end
-		
-		undo.AddEntity( cs2 )
-		if cr2 then undo.AddEntity( cr2 ) end
-		
-		--[[undo.AddEntity( cs3 )
-		if cr3 then undo.AddEntity( cr3 ) end
-		
-		undo.AddEntity( cs4 )
-		if cr4 then undo.AddEntity( cr4 ) end --]]
-		
-		undo.AddEntity( cs5 )
-		if cr5 then undo.AddEntity( cr5 ) end
-		
-		undo.AddEntity( piston )
-		--undo.AddEntity( const )
+		if const then undo.AddEntity( const ) end
+		if rope then undo.AddEntity( rope) end
+		if piston then undo.AddEntity( piston) end
 		undo.SetPlayer( self:GetOwner() )
 	undo.Finish()
 	
@@ -364,4 +457,4 @@ end
 
 
 
-list.Set( "Pistons", "models/burak575/piston20.mdl", {} )
+list.Set( "Pistons", "models/burak575/piston20.mdl", { Flags = "cZ" } ) -- Center And Z is the axis
