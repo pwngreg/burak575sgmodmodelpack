@@ -11,7 +11,7 @@ Give a cylinder length value. ( Note: Piston will not go further than this lengt
 Select necessary options like sound effect etc.
 
 == Left Click ==
-  * If you clicked while looking another prop it will spawns piston tool.
+  * If you clicked while looking another prop it will spawns piston.
   * If you clicked while looking another "Piston" it will update it's options.
 
 == Right Click ==
@@ -48,4 +48,3 @@ Currently only center and axis is coded so you should always put a "c" and a axi
 So current valid options are "cX" "cY" "cZ"
 
 This maybe change in future versions. I may add another flags upon requests.
-
